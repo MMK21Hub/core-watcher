@@ -21,13 +21,19 @@ fn main() {
     let count = counter!("test_counter", "service" => "amazing service");
     let mut sys = System::new_all();
     sys.refresh_all();
+    let cpu_count = sys.cpus().len();
     let cpu_usages: Vec<Gauge> = sys
         .cpus()
         .iter()
         .enumerate()
         .map(|(i, cpu)| gauge!("cpu_usage_percent", "cpu_name" => cpu.name().to_string(), "cpu_number" => (i + 1).to_string()) )
         .collect();
-    let cpu_count = sys.cpus().len();
+    let cpu_frequencies: Vec<Gauge> = sys
+        .cpus()
+        .iter()
+        .enumerate()
+        .map(|(i, cpu)| gauge!("cpu_frequency_megahertz", "cpu_name" => cpu.name().to_string(), "cpu_number" => (i + 1).to_string()) )
+        .collect();
 
     loop {
         sys.refresh_all();
@@ -43,6 +49,7 @@ fn main() {
         count.increment(1);
         for (i, cpu) in sys.cpus().iter().enumerate() {
             cpu_usages[i].set(cpu.cpu_usage());
+            cpu_frequencies[i].set(cpu.frequency() as f64);
         }
 
         // thread::sleep(cmp::max(

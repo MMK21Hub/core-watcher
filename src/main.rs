@@ -59,14 +59,10 @@ fn main() {
                 Some(path) => format!("unknown_{}", path.to_string_lossy().replace("/", "_")),
                 None => format!("unknown_{}_{}", chip.bus().number(), chip.raw_address()),
             });
-            let sensor_name = match sensor.name() {
-                Some(Ok(name)) => name.to_string(),
-                Some(Err(_)) => format!("unknown_{}", sensor.number()),
-                None => format!("unknown_{}", sensor.number()),
-            };
+            let feature_name = sensor.feature().to_string();
             gauge!("hwmon_temperature_celsius",
                     "sensor_chip" => chip_name,
-                    "sensor_name" => sensor_name,
+                    "sensor_name" => feature_name,
             )
         })
         .collect();

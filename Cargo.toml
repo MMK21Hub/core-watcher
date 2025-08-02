@@ -5,6 +5,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+lm-sensors = "0.3.2"
 metrics = "0.24.2"
 metrics-exporter-prometheus = "0.17.2"
 sysinfo = "0.36.1"

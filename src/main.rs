@@ -25,7 +25,7 @@ fn main() {
         .cpus()
         .iter()
         .enumerate()
-        .map(|(i, cpu)| gauge!(format!("cpu_{}_usage", i), "cpu_name" => cpu.name().to_string()))
+        .map(|(i, cpu)| gauge!("cpu_usage_percent", "cpu_name" => cpu.name().to_string(), "cpu_number" => (i + 1).to_string()) )
         .collect();
     let cpu_count = sys.cpus().len();
 

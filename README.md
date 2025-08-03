@@ -1,12 +1,14 @@
-# Core watcher
+# Core Watcher
 
-> A Rust tool that watches your CPU cores (and other system metrics!) and exports them to Prometheus
+A Rust tool that watches your Linux system's CPU cores (and other system metrics!) and exports them to Prometheus.
 
 ## Screenshots
 
 ![An overview of the metrics, rendered in Grafana](assets/overview_metrics.png)
 
 ## Running locally
+
+Only Linux is supported.
 
 ### Installing dependencies
 
@@ -42,3 +44,11 @@ In production, you can of course use an existing Prometheus instance, or somethi
     static_configs:
       - targets: ["arch-pc:9000"]
 ```
+
+### Installing as a systemd service
+
+1. Install the binary globally: `sudo install -m755 target/release/core-watcher /usr/local/bin/core-watcher`
+2. Install the systemd service file: `sudo install -m644 production/core-watcher.service /etc/systemd/system/core-watcher.service`
+3. Enable and start the service: `sudo systemctl enable --now core-watcher`
+   - This will set Core Watcher to start automatically on boot
+4. Check that it's started properly: `sudo systemctl status core-watcher`

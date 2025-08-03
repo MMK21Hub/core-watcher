@@ -1,0 +1,12 @@
+[Unit]
+Description=Core Watcher - System metrics exporter
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/core-watcher
+Restart=on-failure
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -5,7 +5,7 @@ use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     thread,
 };
-use sysinfo::{MINIMUM_CPU_UPDATE_INTERVAL, System};
+use sysinfo::{MINIMUM_CPU_UPDATE_INTERVAL, Networks, System};
 
 fn main() {
     // Set up Prometheus exporter
@@ -67,6 +67,26 @@ fn main() {
         })
         .collect();
 
+    let networks = Networks::new_with_refreshed_list();
+    let network_data_received_gauges: Vec<Gauge> = networks
+        .iter()
+        .map(|(interface_name, _)| {
+            gauge!(
+                "network_received_bytes",
+                "interface" => interface_name.to_string()
+            )
+        })
+        .collect();
+    let network_data_transmitted_gauges: Vec<Gauge> = networks
+        .iter()
+        .map(|(interface_name, _)| {
+            gauge!(
+                "network_transmitted_bytes",
+                "interface_name" => interface_name.to_string()
+            )
+        })
+        .collect();
+
     loop {
         sys.refresh_all();
         if cpu_count != sys.cpus().len() {
@@ -93,6 +113,10 @@ fn main() {
                 Err(_) => continue,
             };
             temperature_gauges[i].set(value);
+        }
+        for (i, (_, network)) in networks.iter().enumerate() {
+            network_data_received_gauges[i].set(network.total_received() as f64);
+            network_data_transmitted_gauges[i].set(network.total_transmitted() as f64);
         }
 
         // thread::sleep(cmp::max(

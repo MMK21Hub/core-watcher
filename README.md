@@ -30,3 +30,15 @@ docker run \
     -v ./development/prometheus.yaml:/etc/prometheus/prometheus.yml \
     prom/prometheus
 ```
+
+### Using an existing Prometheus instance
+
+In production, you can of course use an existing Prometheus instance, or something compatible like VictoriaMetrics (which is what I use). Simply add a scrape config like the following:
+
+<!-- prettier-ignore -->
+```yaml
+  - job_name: core_watcher
+    scrape_interval: "1s"
+    static_configs:
+      - targets: ["arch-pc:9000"]
+```

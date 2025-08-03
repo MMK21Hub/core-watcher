@@ -34,6 +34,11 @@ jobs:
         # See https://github.com/cross-rs/cross/issues/1222#issuecomment-1950869024
         if: contains(matrix.platform.os-name, 'android')
         run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Install required C packages
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsensors5
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v1
         with:

@@ -8,21 +8,43 @@ A Rust tool that watches your Linux system's CPU cores (and other system metrics
 
 ## Running locally
 
-Only Linux is supported.
+Only Linux is supported. Currently, only pre-compiled binaries for x86_64 are available, but you can compile it yourself for other architectures.
 
-### Installing dependencies
+### Step 1: Quick start
 
-1. [Install Rust](https://www.rust-lang.org/tools/install)
-2. Install Prometheus, e.g. by using your system's package manager. This isn't strictly required to run the program, but is needed if you want to use the metrics in a Grafana dashboard or something.
+1. Download the Linux x86_64 binary from the [latest release](https://github.com/MMK21Hub/core-watcher/releases/latest)
+2. Make it executable and run it:
 
-### Running the project
+   ```bash
+   chmod +x core-watcher
+   ./core-watcher
+   ```
 
-1. Clone the repository and `cd` into it as per usual
-2. Run the program: `cargo run`
-3. Check that it's working by visiting <http://localhost:9000/metrics>
-4. Optionally, run Prometheus: `prometheus --config.file=development/prometheus.yaml`
+3. Core Watcher is now running! 🎉
+4. Head to <http://localhost:9000/metrics> to verify that it's producing metrics as expected.
 
-### Using Prometheus in Docker
+### Step 2: Add Prometheus
+
+Prometheus isn't strictly required to run the program, but you'll need it if you want to actually track the metrics, so that you can visualise them in a Grafana dashboard or something like that.
+
+#### Option A: Installing Prometheus locally
+
+The easiest way to run Prometheus is to install it to your system.
+
+1. Install Prometheus, e.g. by using your system's package manager: `sudo apt install prometheus` or `sudo pacman -S prometheus`
+
+   ```bash
+   sudo apt install prometheus # For Debian/Ubuntu
+   sudo pacman -S prometheus # For Arch Linux
+   ```
+
+2. Run Prometheus:
+
+   ```bash
+   prometheus --config.file=development/prometheus.yaml
+   ```
+
+#### Option B: Using Prometheus in Docker
 
 As an alternative to installing Prometheus on your system, you can run it in a Docker container, like this:
 
@@ -33,7 +55,7 @@ docker run \
     prom/prometheus
 ```
 
-### Using an existing Prometheus instance
+#### Option C: Using an existing Prometheus instance
 
 In production, you can of course use an existing Prometheus instance, or something compatible like VictoriaMetrics (which is what I use). Simply add a scrape config like the following:
 
@@ -47,11 +69,23 @@ In production, you can of course use an existing Prometheus instance, or somethi
 
 ### Installing as a systemd service
 
+You may want to install Core Watcher as a systemd service, so that it starts automatically on boot.
+
 1. Install the binary globally: `sudo install -m755 target/release/core-watcher /usr/local/bin/core-watcher`
 2. Install the systemd service file: `sudo install -m644 production/core-watcher.service /etc/systemd/system/core-watcher.service`
 3. Enable and start the service: `sudo systemctl enable --now core-watcher`
    - This will set Core Watcher to start automatically on boot
 4. Check that it's started properly: `sudo systemctl status core-watcher`
+
+### Compiling from source
+
+You only need to do this if a pre-compiled binary isn't available for your architecture, or if you want to be sure that you can trust the compiled binary.
+
+Ensure that you have [installed Rust](https://www.rust-lang.org/tools/install) first.
+
+1. Clone the repository and `cd` into it as per usual
+2. Run the program: `cargo run`
+3. Optionally, run Prometheus: `prometheus --config.file=development/prometheus.yaml`
 
 ## Contributing
 

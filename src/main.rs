@@ -1,5 +1,5 @@
 use lm_sensors::{SubFeatureRef, Value, value::Kind};
-use metrics::{Gauge, counter, gauge};
+use metrics::{Counter, Gauge, counter, gauge};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use std::{
     collections::HashMap,
@@ -8,13 +8,13 @@ use std::{
 };
 use sysinfo::{MINIMUM_CPU_UPDATE_INTERVAL, Networks, System};
 
-struct NetGauges {
-    received_bytes: Gauge,
-    transmitted_bytes: Gauge,
-    received_packets: Gauge,
-    transmitted_packets: Gauge,
-    receive_errors: Gauge,
-    transmit_errors: Gauge,
+struct NetCounters {
+    received_bytes: Counter,
+    transmitted_bytes: Counter,
+    received_packets: Counter,
+    transmitted_packets: Counter,
+    receive_errors: Counter,
+    transmit_errors: Counter,
 }
 
 fn main() {
@@ -78,17 +78,17 @@ fn main() {
         .collect();
 
     let mut networks = Networks::new_with_refreshed_list();
-    let mut net_gauges: HashMap<String, NetGauges> = HashMap::new();
+    let mut net_counters: HashMap<String, NetCounters> = HashMap::new();
     for (interface_name, _) in networks.iter() {
-        net_gauges.insert(
+        net_counters.insert(
             interface_name.to_string(),
-            NetGauges {
-                received_bytes: gauge!("network_received_bytes_total", "interface" => interface_name.to_string()),
-                transmitted_bytes: gauge!("network_transmitted_bytes_total", "interface" => interface_name.to_string()),
-                received_packets: gauge!("network_received_packets_total", "interface" => interface_name.to_string()),
-                transmitted_packets: gauge!("network_transmitted_packets_total", "interface" => interface_name.to_string()),
-                receive_errors: gauge!("network_receive_errors_total", "interface" => interface_name.to_string()),
-                transmit_errors: gauge!("network_transmit_errors_total", "interface" => interface_name.to_string()),
+            NetCounters {
+                received_bytes: counter!("network_received_bytes_total", "interface" => interface_name.to_string()),
+                transmitted_bytes: counter!("network_transmitted_bytes_total", "interface" => interface_name.to_string()),
+                received_packets: counter!("network_received_packets_total", "interface" => interface_name.to_string()),
+                transmitted_packets: counter!("network_transmitted_packets_total", "interface" => interface_name.to_string()),
+                receive_errors: counter!("network_receive_errors_total", "interface" => interface_name.to_string()),
+                transmit_errors: counter!("network_transmit_errors_total", "interface" => interface_name.to_string()),
             },
         );
     }
@@ -122,23 +122,23 @@ fn main() {
             temperature_gauges[i].set(value);
         }
         for (interface_name, network) in networks.iter() {
-            if let Some(gauges) = net_gauges.get(interface_name) {
-                gauges.received_bytes.set(network.total_received() as f64);
-                gauges
+            if let Some(counters) = net_counters.get(interface_name) {
+                counters.received_bytes.absolute(network.total_received());
+                counters
                     .transmitted_bytes
-                    .set(network.total_transmitted() as f64);
-                gauges
+                    .absolute(network.total_transmitted());
+                counters
                     .received_packets
-                    .set(network.total_packets_received() as f64);
-                gauges
+                    .absolute(network.total_packets_received());
+                counters
                     .transmitted_packets
-                    .set(network.total_packets_transmitted() as f64);
-                gauges
+                    .absolute(network.total_packets_transmitted());
+                counters
                     .receive_errors
-                    .set(network.total_errors_on_received() as f64);
-                gauges
+                    .absolute(network.total_errors_on_received());
+                counters
                     .transmit_errors
-                    .set(network.total_errors_on_transmitted() as f64);
+                    .absolute(network.total_errors_on_transmitted());
             }
         }
 

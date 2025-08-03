@@ -13,6 +13,8 @@ struct NetGauges {
     transmitted_bytes: Gauge,
     received_packets: Gauge,
     transmitted_packets: Gauge,
+    receive_errors: Gauge,
+    transmit_errors: Gauge,
 }
 
 fn main() {
@@ -85,6 +87,8 @@ fn main() {
                 transmitted_bytes: gauge!("network_transmitted_bytes_total", "interface" => interface_name.to_string()),
                 received_packets: gauge!("network_received_packets_total", "interface" => interface_name.to_string()),
                 transmitted_packets: gauge!("network_transmitted_packets_total", "interface" => interface_name.to_string()),
+                receive_errors: gauge!("network_receive_errors_total", "interface" => interface_name.to_string()),
+                transmit_errors: gauge!("network_transmit_errors_total", "interface" => interface_name.to_string()),
             },
         );
     }
@@ -129,6 +133,12 @@ fn main() {
                 gauges
                     .transmitted_packets
                     .set(network.total_packets_transmitted() as f64);
+                gauges
+                    .receive_errors
+                    .set(network.total_errors_on_received() as f64);
+                gauges
+                    .transmit_errors
+                    .set(network.total_errors_on_transmitted() as f64);
             }
         }
 

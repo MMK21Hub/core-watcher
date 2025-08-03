@@ -1,0 +1,58 @@
+name: Cross-compilation
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Build for ${{ matrix.platform.os-name }}
+    strategy:
+      matrix:
+        platform:
+          - os-name: Linux_x86_64
+            runs-on: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os-name: Linux_aarch64
+            runs-on: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - os-name: Linux_i686
+            runs-on: ubuntu-latest
+            target: i686-unknown-linux-gnu
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Extract version number
+        shell: bash
+        run: echo "VERSION=$(grep -m 1 '^version' Cargo.toml | cut -d '"' -f 2)" >> $GITHUB_ENV
+      - name: Install Cross
+        shell: bash
+        # Use the git `main` branch because it has functional support for Android builds
+        # See https://github.com/cross-rs/cross/issues/1222#issuecomment-1950869024
+        if: contains(matrix.platform.os-name, 'android')
+        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Build binary
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: build
+          target: ${{ matrix.platform.target }}
+          args: "--locked --release"
+          strip: true
+      # Having all the files we want to include in the artifact in one folder means that everything can go in the root of the .zip
+      - name: Copy README and LICENSE files
+        shell: bash
+        run: cp README.md LICENSE target/${{ matrix.platform.target }}/release/
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Core_Watcher_v${{ env.VERSION }}_${{ matrix.platform.os-name }}
+          # Include core-watcher or core-watcher.exe, but not core-watcher.d
+          path: |
+            ./target/${{ matrix.platform.target }}/release/core-watcher*
+            !**/*.d
+            ./target/${{ matrix.platform.target }}/release/README.md
+            ./target/${{ matrix.platform.target }}/release/LICENCE
+          if-no-files-found: error

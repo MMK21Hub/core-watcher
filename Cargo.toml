@@ -2,7 +2,7 @@
 name = "core-watcher"
 description = "Watches your CPU cores (and other system metrics) and exports them to Prometheus"
 license = "MIT"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 
 [dependencies]

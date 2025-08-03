@@ -2,10 +2,18 @@ use lm_sensors::{SubFeatureRef, Value, value::Kind};
 use metrics::{Gauge, counter, gauge};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use std::{
+    collections::HashMap,
     net::{IpAddr, Ipv4Addr, SocketAddr},
     thread,
 };
 use sysinfo::{MINIMUM_CPU_UPDATE_INTERVAL, Networks, System};
+
+struct NetGauges {
+    received_bytes: Gauge,
+    transmitted_bytes: Gauge,
+    received_packets: Gauge,
+    transmitted_packets: Gauge,
+}
 
 fn main() {
     // Set up Prometheus exporter
@@ -67,25 +75,19 @@ fn main() {
         })
         .collect();
 
-    let networks = Networks::new_with_refreshed_list();
-    let network_data_received_gauges: Vec<Gauge> = networks
-        .iter()
-        .map(|(interface_name, _)| {
-            gauge!(
-                "network_received_bytes",
-                "interface" => interface_name.to_string()
-            )
-        })
-        .collect();
-    let network_data_transmitted_gauges: Vec<Gauge> = networks
-        .iter()
-        .map(|(interface_name, _)| {
-            gauge!(
-                "network_transmitted_bytes",
-                "interface_name" => interface_name.to_string()
-            )
-        })
-        .collect();
+    let mut networks = Networks::new_with_refreshed_list();
+    let mut net_gauges: HashMap<String, NetGauges> = HashMap::new();
+    for (interface_name, _) in networks.iter() {
+        net_gauges.insert(
+            interface_name.to_string(),
+            NetGauges {
+                received_bytes: gauge!("network_received_bytes_total", "interface" => interface_name.to_string()),
+                transmitted_bytes: gauge!("network_transmitted_bytes_total", "interface" => interface_name.to_string()),
+                received_packets: gauge!("network_received_packets_total", "interface" => interface_name.to_string()),
+                transmitted_packets: gauge!("network_transmitted_packets_total", "interface" => interface_name.to_string()),
+            },
+        );
+    }
 
     loop {
         sys.refresh_all();
@@ -96,6 +98,7 @@ fn main() {
                 sys.cpus().len()
             );
         }
+        networks.refresh(false);
 
         // Update metrics
         count.increment(1);
@@ -114,9 +117,19 @@ fn main() {
             };
             temperature_gauges[i].set(value);
         }
-        for (i, (_, network)) in networks.iter().enumerate() {
-            network_data_received_gauges[i].set(network.total_received() as f64);
-            network_data_transmitted_gauges[i].set(network.total_transmitted() as f64);
+        for (interface_name, network) in networks.iter() {
+            if let Some(gauges) = net_gauges.get(interface_name) {
+                gauges.received_bytes.set(network.total_received() as f64);
+                gauges
+                    .transmitted_bytes
+                    .set(network.total_transmitted() as f64);
+                gauges
+                    .received_packets
+                    .set(network.total_packets_received() as f64);
+                gauges
+                    .transmitted_packets
+                    .set(network.total_packets_transmitted() as f64);
+            }
         }
 
         // thread::sleep(cmp::max(

@@ -1,6 +1,6 @@
 # Core Watcher
 
-A Rust tool that watches your Linux system's CPU cores (and other system metrics!) and exports them to Prometheus.
+A dead-simple Rust tool that watches your Linux system's CPU cores (and other system metrics!) and exports them to Prometheus.
 
 ## Screenshots
 
